@@ -1,9 +1,9 @@
-def post_to_bluesky_direct(price):
-    import requests
-    import os
-    import json
-    from datetime import datetime
+import requests
+import os
+import json
+from datetime import datetime
 
+def post_to_bluesky_direct(price):
     # Bluesky API-endepunkt og innlogging
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
@@ -47,3 +47,18 @@ def post_to_bluesky_direct(price):
         print("Successfully posted to Bluesky!")
     else:
         print("Error posting:", response.text)
+
+def main():
+    # Hent Bitcoin-prisen fra CoinGecko
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        price = response.json()["bitcoin"]["usd"]
+        print(f"Current Bitcoin Price: ${price:,}")
+        post_to_bluesky_direct(price)
+    else:
+        print("Error fetching Bitcoin price:", response.text)
+
+if __name__ == "__main__":
+    main()
