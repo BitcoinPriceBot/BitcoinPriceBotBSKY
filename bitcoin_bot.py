@@ -33,33 +33,23 @@ def post_to_bluesky(price, change):
     # Velge riktig emoji for prisendring
     direction = "📈" if change > 0 else "📉" if change < 0 else "➖"
 
-    # Teksten til posten
+    # Teksten til posten med mellomrom mellom hashtags
     text = (
         f"{direction} Bitcoin Price: {formatted_price}\n"
         f"📊 24h Change: {change:.2f}%\n\n"
-        "#bitcoin#btc#crypto"  # Ingen mellomrom her
+        "#bitcoin #btc #crypto"
     )
 
     # Dynamisk beregne posisjon for hashtags
-    bitcoin_pos = text.index("#bitcoin")
-    btc_pos = text.index("#btc")
-    crypto_pos = text.index("#crypto")
-
-    # Definer facets for hashtags
-    facets = [
-        {
-            "index": {"byteStart": bitcoin_pos, "byteEnd": bitcoin_pos + len("#bitcoin")},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/bitcoin"}],
-        },
-        {
-            "index": {"byteStart": btc_pos, "byteEnd": btc_pos + len("#btc")},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/btc"}],
-        },
-        {
-            "index": {"byteStart": crypto_pos, "byteEnd": crypto_pos + len("#crypto")},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/crypto"}],
-        },
-    ]
+    hashtags = ["#bitcoin", "#btc", "#crypto"]
+    facets = []
+    for tag in hashtags:
+        start = text.index(tag)
+        end = start + len(tag)
+        facets.append({
+            "index": {"byteStart": start, "byteEnd": end},
+            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": f"https://bsky.app/tag/{tag[1:]}"}]
+        })
 
     # Innhold til posten
     content = {
