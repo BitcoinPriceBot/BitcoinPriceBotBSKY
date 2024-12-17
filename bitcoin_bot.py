@@ -13,41 +13,40 @@ def fetch_bitcoin_data():
     return price, change
 
 def post_to_bluesky():
-    # Fetch updated Bitcoin data
+    # Hent Bitcoin data
     price, change = fetch_bitcoin_data()
 
-    # Bluesky API details
+    # Bluesky API detaljer
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
 
-    # Login to get access token
+    # Logg inn for å få access token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
         json={"identifier": handle, "password": password}
     )
     access_token = login_response.json().get("accessJwt")
 
-    # Post content
-    headers["Authorization"] = f"Bearer {access_token}"
+    # Teksten til posten
     text = (
         f"📉 Bitcoin Price: ${price:,}\n"
         f"📊 24h Change: {change}%\n\n"
         f"#bitcoin #btc #crypto"
     )
 
-    # Correctly calculate byte indices for facets
+    # Manuelle byteindekser for hashtags
     hashtags = ["#bitcoin", "#btc", "#crypto"]
-    facets = []
-    for tag in hashtags:
-        start = text.find(tag)
-        end = start + len(tag)
-        facets.append({
-            "index": {"byteStart": start, "byteEnd": end},
+    facets = [
+        {
+            "index": {"byteStart": text.index(tag), "byteEnd": text.index(tag) + len(tag)},
             "features": [{"$type": "app.bsky.richtext.facet#link", "uri": f"https://bsky.app/search?q=%23{tag[1:]}"}]
-        })
+        }
+        for tag in hashtags
+    ]
 
+    # Innholdet til posten
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
@@ -58,12 +57,13 @@ def post_to_bluesky():
         }
     }
 
-    # Send post request
+    # Send forespørselen for å poste
+    headers["Authorization"] = f"Bearer {access_token}"
     response = requests.post(url, headers=headers, json=content)
     if response.status_code == 200:
-        print("Successfully posted to Bluesky!")
+        print("Postet vellykket til Bluesky!")
     else:
-        print("Error posting:", response.text)
+        print("Feil ved posting:", response.text)
 
 if __name__ == "__main__":
     post_to_bluesky()
