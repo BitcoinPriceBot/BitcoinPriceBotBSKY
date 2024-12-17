@@ -17,9 +17,8 @@ def post_to_bluesky(price, change):
     # Logg inn for å få token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
-        json={"identifier": handle, "password": password}
+        json={"identifier": handle, "password": password},
     )
-
     if login_response.status_code == 200:
         access_token = login_response.json().get("accessJwt")
         headers["Authorization"] = f"Bearer {access_token}"
@@ -28,49 +27,42 @@ def post_to_bluesky(price, change):
         print("Login failed:", login_response.text)
         return
 
+    # Formatere prisen med tusenskilletegn
+    formatted_price = f"${int(price):,}"  # Konverterer til int for å fjerne cent og legger til komma
+
+    # Velge riktig emoji for prisendring
+    if change > 0:
+        direction = "📈"
+    elif change < 0:
+        direction = "📉"
+    else:
+        direction = "➖"
+
     # Innhold til posten
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": f"📉 Bitcoin Price: ${price}\n📊 Change (24h): {change}%\n\n#bitcoin #btc #crypto",
-            "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        }
+            "text": (
+                f"{direction} Bitcoin Price: {formatted_price}\n"
+                f"📊 24h Change: {change:.2f}%\n\n"
+                "#bitcoin #btc #crypto"
+            ),
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+        },
     }
 
-    # Send posten til Bluesky
+    # Forsøke å sende post
     print("Attempting to send post...")
     response = requests.post(url, headers=headers, json=content)
-    print("Post response:", response.status_code, response.text)
 
     if response.status_code == 200:
         print("Successfully posted to Bluesky!")
     else:
         print("Error posting:", response.text)
 
-# Hent Bitcoin-prisen og endringen
-def fetch_bitcoin_data():
-    print("Fetching Bitcoin price...")
-    try:
-        response = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true")
-        if response.status_code == 200:
-            data = response.json()["bitcoin"]
-            price = data["usd"]
-            change = round(data["usd_24h_change"], 2)
-            print(f"Current Bitcoin Price: ${price}")
-            print(f"24h Change: {change}%")
-            return price, change
-        else:
-            print("Failed to fetch data:", response.text)
-            return None, None
-    except Exception as e:
-        print("Error fetching data:", str(e))
-        return None, None
-
-# Hovedfunksjon
+# Eksempel for testing
 if __name__ == "__main__":
-    price, change = fetch_bitcoin_data()
-    if price and change is not None:
-        post_to_bluesky(price, change)
-    else:
-        print("Could not fetch Bitcoin data. Exiting...")
+    bitcoin_price = 106956  # Eksempelverdi
+    change_24h = 3.18  # Eksempelverdi
+    post_to_bluesky(bitcoin_price, change_24h)
