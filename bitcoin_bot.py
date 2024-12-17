@@ -31,32 +31,32 @@ def post_to_bluesky(price, change):
     formatted_price = f"${int(price):,}"  # Konverterer til int for å fjerne cent og legger til komma
 
     # Velge riktig emoji for prisendring
-    if change > 0:
-        direction = "📈"
-    elif change < 0:
-        direction = "📉"
-    else:
-        direction = "➖"
+    direction = "📈" if change > 0 else "📉" if change < 0 else "➖"
 
     # Teksten til posten
     text = (
         f"{direction} Bitcoin Price: {formatted_price}\n"
         f"📊 24h Change: {change:.2f}%\n\n"
-        "#bitcoin #btc #crypto"
+        "#bitcoin#btc#crypto"  # Ingen mellomrom her
     )
+
+    # Dynamisk beregne posisjon for hashtags
+    bitcoin_pos = text.index("#bitcoin")
+    btc_pos = text.index("#btc")
+    crypto_pos = text.index("#crypto")
 
     # Definer facets for hashtags
     facets = [
         {
-            "index": {"byteStart": text.index("#bitcoin"), "byteEnd": text.index("#bitcoin") + 8},
+            "index": {"byteStart": bitcoin_pos, "byteEnd": bitcoin_pos + len("#bitcoin")},
             "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/bitcoin"}],
         },
         {
-            "index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + 4},
+            "index": {"byteStart": btc_pos, "byteEnd": btc_pos + len("#btc")},
             "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/btc"}],
         },
         {
-            "index": {"byteStart": text.index("#crypto"), "byteEnd": text.index("#crypto") + 7},
+            "index": {"byteStart": crypto_pos, "byteEnd": crypto_pos + len("#crypto")},
             "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/crypto"}],
         },
     ]
