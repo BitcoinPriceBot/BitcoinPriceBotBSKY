@@ -5,11 +5,7 @@ from datetime import datetime
 
 def fetch_bitcoin_data():
     url = "https://api.coingecko.com/api/v3/simple/price"
-    params = {
-        "ids": "bitcoin",
-        "vs_currencies": "usd",
-        "include_24hr_change": "true"
-    }
+    params = {"ids": "bitcoin", "vs_currencies": "usd", "include_24hr_change": "true"}
     response = requests.get(url, params=params)
     data = response.json()
     price = data["bitcoin"]["usd"]
@@ -35,23 +31,22 @@ def post_to_bluesky():
 
     # Post content
     headers["Authorization"] = f"Bearer {access_token}"
-    text = f"📉 Bitcoin Price: ${price:,}\n📊 24h Change: {change}%\n\n#bitcoin #btc #crypto"
+    text = (
+        f"📉 Bitcoin Price: ${price:,}\n"
+        f"📊 24h Change: {change}%\n\n"
+        f"#bitcoin #btc #crypto"
+    )
 
-    # Define facets for clickable hashtags
-    facets = [
-        {
-            "index": {"byteStart": text.index("#bitcoin"), "byteEnd": text.index("#bitcoin") + len("#bitcoin")},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/search?q=%23bitcoin"}]
-        },
-        {
-            "index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + len("#btc")},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/search?q=%23btc"}]
-        },
-        {
-            "index": {"byteStart": text.index("#crypto"), "byteEnd": text.index("#crypto") + len("#crypto")},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/search?q=%23crypto"}]
-        }
-    ]
+    # Correctly calculate byte indices for facets
+    hashtags = ["#bitcoin", "#btc", "#crypto"]
+    facets = []
+    for tag in hashtags:
+        start = text.find(tag)
+        end = start + len(tag)
+        facets.append({
+            "index": {"byteStart": start, "byteEnd": end},
+            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": f"https://bsky.app/search?q=%23{tag[1:]}"}]
+        })
 
     content = {
         "repo": handle,
