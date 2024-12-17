@@ -7,18 +7,15 @@ def fetch_bitcoin_price():
     response = requests.get(url)
     data = response.json()
 
-    # Henter pris og 24-timers endring
     try:
         price = data["bitcoin"]["usd"]
         change = data["bitcoin"]["usd_24h_change"]
         return price, round(change, 2)
     except KeyError:
         print("Error: Could not fetch price or change.")
-        print("API Response:", data)
         return None, None
 
 def post_to_bluesky():
-    # Logger inn i Bluesky API
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
 
@@ -28,7 +25,6 @@ def post_to_bluesky():
     print(f"Using handle: {handle}")
     print("Starting login...")
 
-    # Henter en access token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
         json={"identifier": handle, "password": password},
@@ -37,31 +33,38 @@ def post_to_bluesky():
     if login_response.status_code == 200:
         access_token = login_response.json().get("accessJwt")
         headers["Authorization"] = f"Bearer {access_token}"
-        print("Login successful. Access token acquired.")
+        print("Login successful.")
     else:
         print("Login failed:", login_response.text)
         return
 
-    # Henter Bitcoin data
     price, change = fetch_bitcoin_price()
     if price is None or change is None:
         print("Failed to fetch Bitcoin data.")
         return
 
-    # Velger emoji basert på endring
     emoji = "📈" if change > 0 else "📉"
 
-    # Oppretter innhold til posten
+    text = f"{emoji} Bitcoin Price: ${price:,}\n📊 24h Change: {change}%\n\n#bitcoin #btc #crypto"
+
+    # Facetter for hashtags
+    facets = [
+        {"index": {"byteStart": text.find("#bitcoin"), "byteEnd": text.find("#bitcoin") + 8}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/hashtag/bitcoin"}]},
+        {"index": {"byteStart": text.find("#btc"), "byteEnd": text.find("#btc") + 4}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/hashtag/btc"}]},
+        {"index": {"byteStart": text.find("#crypto"), "byteEnd": text.find("#crypto") + 7}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/hashtag/crypto"}]},
+    ]
+
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": f"{emoji} Bitcoin Price: ${price:,}\n📊 24h Change: {change}%\n\n#bitcoin #btc #crypto",
+            "text": text,
+            "facets": facets,
             "createdAt": datetime.utcnow().isoformat() + "Z",
         },
     }
 
-    print("Attempting to send post...")
+    print("Sending post...")
     response = requests.post(url, headers=headers, json=content)
 
     if response.status_code == 200:
