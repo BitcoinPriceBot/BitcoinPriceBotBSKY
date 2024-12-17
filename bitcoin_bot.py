@@ -1,7 +1,6 @@
 import requests
 import os
-from datetime import datetime, timedelta
-import time
+from datetime import datetime
 
 # Function to fetch Bitcoin price and change
 def get_bitcoin_data():
@@ -59,21 +58,8 @@ def post_to_bluesky(price, change):
     else:
         print("Login failed:", login_response.text)
 
-# Main loop
+# Main function
 if __name__ == "__main__":
-    # Manual trigger post
-    print("Running manual trigger post...")
     bitcoin_price, price_change = get_bitcoin_data()
     if bitcoin_price is not None and price_change is not None:
         post_to_bluesky(bitcoin_price, price_change)
-    
-    # Loop for scheduled posts every 30 minutes
-    print("Starting scheduled posting every 30 minutes...")
-    while True:
-        next_run = datetime.now() + timedelta(minutes=30)
-        print(f"Next post scheduled for {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
-        time.sleep(1800)  # Wait 30 minutes
-        
-        bitcoin_price, price_change = get_bitcoin_data()
-        if bitcoin_price is not None and price_change is not None:
-            post_to_bluesky(bitcoin_price, price_change)
