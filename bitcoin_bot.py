@@ -33,9 +33,9 @@ def post_to_bluesky(price, change):
     formatted_price = f"${price:,.0f}"
     formatted_change = f"{change:.2f}%"
 
-    # Post content: ALL TEXT IN A SINGLE STRING
+    # Post content: ensuring line breaks and spaces
     content = (
-        f"{emoji} Bitcoin Price: {formatted_price} ({formatted_change})\n"
+        f"{emoji} Bitcoin Price: {formatted_price} ({formatted_change})\n\n"
         f"#bitcoin #btc #crypto"
     )
 
