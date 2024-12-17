@@ -29,13 +29,13 @@ def post_to_bluesky_direct(price):
         print("Login failed:", login_response.text)
         return
 
-    # Innhold til posten
+    # Innhold til posten med riktig `createdAt`-format
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
             "text": f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain",
-            "createdAt": datetime.now().isoformat(),
+            "createdAt": datetime.now().isoformat(timespec="seconds") + "Z",
         },
     }
 
