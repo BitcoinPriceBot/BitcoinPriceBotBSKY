@@ -1,60 +1,55 @@
 import requests
 import os
-import json
 from datetime import datetime
 
-def get_bitcoin_price_and_change():
-    # Hent pris og 24-timers endring
+def get_bitcoin_price():
     url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true"
     response = requests.get(url)
     if response.status_code == 200:
-        data = response.json()['bitcoin']
-        price = data['usd']
-        change_24h = data['usd_24h_change']
-        return price, change_24h
+        data = response.json()
+        price = data['bitcoin']['usd']
+        change = data['bitcoin']['usd_24h_change']
+        return price, change
     else:
-        print("Error fetching Bitcoin price.")
+        print("Error fetching Bitcoin price:", response.status_code)
         return None, None
 
-def post_to_bluesky(price, change_24h):
-    # Bestem retning og ikon basert på 24-timers endring
-    if change_24h > 0:
-        icon = "📈"
-    elif change_24h < 0:
-        icon = "📉"
-    else:
-        icon = "🔹"
-
-    message = f"{icon} Bitcoin Price: ${price:,}\n📊 Change (24h): {change_24h:.2f}%\n\n#bitcoin #btc #crypto"
-
-    # Bluesky API-innlogging
+def post_to_bluesky(price, change):
+    # Bluesky API-endepunkt og innlogging
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
+
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
-    
+
+    print(f"Using handle: {handle}")
+    print("Starting login...")
+
     # Logg inn for å få token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
         json={"identifier": handle, "password": password}
     )
+
     if login_response.status_code == 200:
         access_token = login_response.json().get("accessJwt")
         headers["Authorization"] = f"Bearer {access_token}"
         print("Login successful. Access token acquired.")
 
-        # Innhold til posten
+        # Generer post-innhold
+        movement = "📈 Rising" if change > 0 else "📉 Dropping"
         content = {
             "repo": handle,
             "collection": "app.bsky.feed.post",
             "record": {
-                "text": message,
+                "text": f"{movement}\n💵 Current price: USD ${price:,.2f}\n📊 24h Change: {change:.2f}%\n\n#Bitcoin #BTC #Crypto",
                 "createdAt": datetime.now().isoformat()
             }
         }
 
-        # Send posten
+        print("Attempting to send post...")
         response = requests.post(url, headers=headers, json=content)
+
         if response.status_code == 200:
             print("Successfully posted to Bluesky!")
         else:
@@ -62,10 +57,7 @@ def post_to_bluesky(price, change_24h):
     else:
         print("Login failed:", login_response.text)
 
-def main():
-    price, change_24h = get_bitcoin_price_and_change()
-    if price is not None and change_24h is not None:
-        post_to_bluesky(price, change_24h)
-
 if __name__ == "__main__":
-    main()
+    price, change = get_bitcoin_price()
+    if price is not None and change is not None:
+        post_to_bluesky(price, change)
