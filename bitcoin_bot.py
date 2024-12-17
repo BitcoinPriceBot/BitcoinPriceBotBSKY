@@ -15,17 +15,16 @@ def fetch_bitcoin_price():
         print("Error: Could not fetch Bitcoin data.")
         return None, None
 
-def generate_facets(text, hashtags):
-    """Genererer facetter for hashtags basert på start- og sluttposisjoner."""
+def generate_facets(text, tags):
+    """Genererer facetter for hashtags."""
     facets = []
-    for tag in hashtags:
-        start = text.find(tag)
-        if start != -1:
-            end = start + len(tag)
-            facets.append({
-                "index": {"byteStart": start, "byteEnd": end},
-                "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": tag[1:]}]
-            })
+    for tag in tags:
+        start = text.index(tag)
+        end = start + len(tag)
+        facets.append({
+            "index": {"byteStart": start, "byteEnd": end},
+            "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": tag[1:]}]
+        })
     return facets
 
 def post_to_bluesky():
@@ -38,6 +37,7 @@ def post_to_bluesky():
     print(f"Using handle: {handle}")
     print("Starting login...")
 
+    # Login request
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
         json={"identifier": handle, "password": password},
@@ -51,17 +51,19 @@ def post_to_bluesky():
         print("Login failed:", login_response.text)
         return
 
+    # Fetch Bitcoin price and change
     price, change = fetch_bitcoin_price()
     if price is None or change is None:
         print("Failed to fetch Bitcoin data.")
         return
 
     emoji = "📈" if change > 0 else "📉"
-    text = f"{emoji} Bitcoin Price: ${price:,} ({change}% 24hr)\n\n#bitcoin #btc #crypto"
-
     hashtags = ["#bitcoin", "#btc", "#crypto"]
+    text = f"{emoji} Bitcoin Price: ${price:,} ({change}%)\n\n{' '.join(hashtags)}"
+
     facets = generate_facets(text, hashtags)
 
+    # Create content for Bluesky
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
@@ -72,6 +74,7 @@ def post_to_bluesky():
         },
     }
 
+    # Send post
     print("Sending post...")
     response = requests.post(url, headers=headers, json=content)
 
