@@ -47,12 +47,17 @@ def post_to_bluesky():
 
     text = f"{emoji} Bitcoin Price: ${price:,}\n📊 24h Change: {change}%\n\n#bitcoin #btc #crypto"
 
-    # Facetter for hashtags
-    facets = [
-        {"index": {"byteStart": text.find("#bitcoin"), "byteEnd": text.find("#bitcoin") + 8}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/hashtag/bitcoin"}]},
-        {"index": {"byteStart": text.find("#btc"), "byteEnd": text.find("#btc") + 4}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/hashtag/btc"}]},
-        {"index": {"byteStart": text.find("#crypto"), "byteEnd": text.find("#crypto") + 7}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/hashtag/crypto"}]},
-    ]
+    # Dynamisk beregning av facetter
+    facets = []
+    hashtags = ["#bitcoin", "#btc", "#crypto"]
+
+    for hashtag in hashtags:
+        start = text.find(hashtag)
+        end = start + len(hashtag)
+        facets.append({
+            "index": {"byteStart": start, "byteEnd": end},
+            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": f"https://bsky.app/hashtag/{hashtag[1:]}"}]
+        })
 
     content = {
         "repo": handle,
