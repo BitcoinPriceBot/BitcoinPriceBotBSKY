@@ -19,12 +19,12 @@ def post_to_bluesky():
     # Velg emoji basert på endringen
     emoji = "📉" if change < 0 else "📈"
 
-    # Formater meldingen med korrekt mellomrom og hashtags
-    message = f"{emoji} Bitcoin Price: ${price:,.0f} ({change:.2f}%)\n\n#bitcoin #btc #crypto"
+    # Formater meldingen (kun én linje!)
+    message = f"{emoji} Bitcoin Price: ${price:,.0f} ({change:.2f}%) #bitcoin #btc #crypto"
 
     # Skriv ut meldingen før den sendes
     print("Final message being sent to Bluesky:")
-    print(repr(message))  # Bruk repr for å vise skjulte tegn
+    print(repr(message))  # Vis nøyaktig melding for debugging
 
     # Bluesky API-innstillinger
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
