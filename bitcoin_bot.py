@@ -1,69 +1,62 @@
 import requests
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
-def fetch_bitcoin_data():
+def fetch_bitcoin_price():
+    # Hent bitcoin-pris og 24t endring fra CoinGecko API
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {"ids": "bitcoin", "vs_currencies": "usd", "include_24hr_change": "true"}
-    response = requests.get(url, params=params)
+    response = requests.get(url)
     data = response.json()
     price = data["bitcoin"]["usd"]
     change = round(data["bitcoin"]["usd_24h_change"], 2)
     return price, change
 
 def post_to_bluesky():
-    # Hent Bitcoin data
-    price, change = fetch_bitcoin_data()
+    # Hent pris og prosentendring
+    price, change = fetch_bitcoin_price()
 
-    # Bluesky API detaljer
+    # Bygg posten med riktig format og hashtags
+    text = (
+        f"📉 Bitcoin Price: ${price:,.0f}\n"
+        f"📊 24h Change: {change}%\n\n"
+        "#bitcoin #btc #crypto"
+    )
+
+    # Bluesky API-endepunkt
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
-    headers = {"Content-Type": "application/json"}
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
 
-    # Logg inn for å få access token
+    # Login for å få access token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
-        json={"identifier": handle, "password": password}
+        json={"identifier": handle, "password": password},
     )
     access_token = login_response.json().get("accessJwt")
 
-    # Teksten til posten
-    text = (
-        f"📉 Bitcoin Price: ${price:,}\n"
-        f"📊 24h Change: {change}%\n\n"
-        f"#bitcoin #btc #crypto"
-    )
-
-    # Manuelle byteindekser for hashtags
-    hashtags = ["#bitcoin", "#btc", "#crypto"]
-    facets = [
-        {
-            "index": {"byteStart": text.index(tag), "byteEnd": text.index(tag) + len(tag)},
-            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": f"https://bsky.app/search?q=%23{tag[1:]}"}]
-        }
-        for tag in hashtags
-    ]
-
-    # Innholdet til posten
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
             "text": text,
-            "facets": facets,
-            "createdAt": datetime.utcnow().isoformat() + "Z"
-        }
+            "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "facets": [
+                {"index": {"byteStart": 60, "byteEnd": 68}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "#bitcoin"}]},
+                {"index": {"byteStart": 69, "byteEnd": 73}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "#btc"}]},
+                {"index": {"byteStart": 74, "byteEnd": 81}, "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "#crypto"}]},
+            ],
+        },
     }
 
-    # Send forespørselen for å poste
-    headers["Authorization"] = f"Bearer {access_token}"
+    # Forsøk å poste
     response = requests.post(url, headers=headers, json=content)
     if response.status_code == 200:
         print("Postet vellykket til Bluesky!")
     else:
-        print("Feil ved posting:", response.text)
+        print(f"Feil ved posting: {response.text}")
 
 if __name__ == "__main__":
     post_to_bluesky()
