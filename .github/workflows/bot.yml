@@ -2,15 +2,16 @@ name: Bitcoin Price Bot
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # Kjør hver 30. minutt
-  workflow_dispatch: # Manuell kjøring av workflow
+    - cron: "*/30 * * * *"  # Kjør hvert 30. minutt
+  workflow_dispatch:        # Tillater manuell kjøring
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
