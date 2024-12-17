@@ -38,16 +38,36 @@ def post_to_bluesky(price, change):
     else:
         direction = "➖"
 
+    # Teksten til posten
+    text = (
+        f"{direction} Bitcoin Price: {formatted_price}\n"
+        f"📊 24h Change: {change:.2f}%\n\n"
+        "#bitcoin #btc #crypto"
+    )
+
+    # Definer facets for hashtags
+    facets = [
+        {
+            "index": {"byteStart": text.index("#bitcoin"), "byteEnd": text.index("#bitcoin") + 8},
+            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/bitcoin"}],
+        },
+        {
+            "index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + 4},
+            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/btc"}],
+        },
+        {
+            "index": {"byteStart": text.index("#crypto"), "byteEnd": text.index("#crypto") + 7},
+            "features": [{"$type": "app.bsky.richtext.facet#link", "uri": "https://bsky.app/tag/crypto"}],
+        },
+    ]
+
     # Innhold til posten
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": (
-                f"{direction} Bitcoin Price: {formatted_price}\n"
-                f"📊 24h Change: {change:.2f}%\n\n"
-                "#bitcoin #btc #crypto"
-            ),
+            "text": text,
+            "facets": facets,  # Legger til facets for hashtags
             "createdAt": datetime.now(timezone.utc).isoformat(),
         },
     }
