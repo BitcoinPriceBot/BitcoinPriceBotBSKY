@@ -29,12 +29,21 @@ def post_to_bluesky_direct(price):
         print("Login failed:", login_response.text)
         return
 
-    # Innhold til posten med riktig `createdAt`-format
+    # Tekst og facets (hashtags) til posten
+    text = f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain"
+    facets = [
+        {"index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + 4}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "btc"}]},
+        {"index": {"byteStart": text.index("#crypto"), "byteEnd": text.index("#crypto") + 7}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "crypto"}]},
+        {"index": {"byteStart": text.index("#blockchain"), "byteEnd": text.index("#blockchain") + 11}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "blockchain"}]},
+    ]
+
+    # Innhold til posten med facets
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain",
+            "text": text,
+            "facets": facets,
             "createdAt": datetime.now().isoformat(timespec="seconds") + "Z",
         },
     }
