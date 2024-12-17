@@ -35,7 +35,11 @@ def post_to_bluesky(price, change):
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": f"📈 Bitcoin Price: ${price:,.0f}\n📊 24h Change: {change:.2f}%\n\n#bitcoin #btc #crypto",
+            "text": (
+                f"📈 Bitcoin Price: ${price:,.0f}\n"
+                f"📊 24h Change: {change:.2f}%\n\n"
+                "#bitcoin #btc #crypto"
+            ),
             "createdAt": created_at,
         },
     }
