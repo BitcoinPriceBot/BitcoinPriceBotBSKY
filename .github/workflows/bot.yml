@@ -2,8 +2,9 @@ name: Bitcoin Price Bot
 
 on:
   schedule:
-    - cron: "0 * * * *" # Kjør hver hele time
-  workflow_dispatch:    # Manuell kjøring
+    # Kjører hver 30. minutt hele døgnet
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Mulighet for manuell kjøring
 
 jobs:
   run-bot:
@@ -11,19 +12,16 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v3
       with:
-        python-version: "3.10"
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
 
     - name: Run bot script
-      env:
-        BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
-        BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
       run: python bitcoin_bot.py
