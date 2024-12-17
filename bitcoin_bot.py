@@ -18,15 +18,10 @@ def get_bitcoin_price():
         return None
 
 def post_to_bluesky(client, price):
-    from atproto import models
-
-    # Opprett en "rich text"-post med hashtags
-    text = f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain"
-    facets = models.Facet.from_tags(["btc", "crypto", "blockchain"], text)
-
-    # Send posten med rich text
-    client.send_post(text=text, facets=facets)
-    print(f"Posted: {text} at {datetime.now()}")
+    # Enkel formattering med dobbelt linjeskift
+    message = f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain"
+    client.send_post(text=message)
+    print(f"Posted: {message} at {datetime.now()}")
 
 def main():
     client = Client()
