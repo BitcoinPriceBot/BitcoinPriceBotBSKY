@@ -2,28 +2,26 @@ name: Bitcoin Price Bot
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # Kjør hvert 30. minutt
-  workflow_dispatch:        # Tillater manuell kjøring
+    - cron: "*/30 * * * *" # Kjører hvert 30. minutt
+  workflow_dispatch: # Lar deg kjøre manuelt
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v3
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install dependencies
-        run: |
-          pip install requests
+        run: pip install requests
 
       - name: Run bot script
+        run: python bitcoin_bot.py
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
-        run: python bitcoin_bot.py
