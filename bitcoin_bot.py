@@ -1,72 +1,73 @@
 import requests
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
-# Fetch Bitcoin price and 24h change from CoinGecko API
-def fetch_bitcoin_price():
-    response = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true")
-    data = response.json()
-    price = data["bitcoin"]["usd"]
-    change = data["bitcoin"]["usd_24h_change"]
-    return price, change
+def post_to_bluesky_direct(price):
+    # Bluesky API-endepunkt og innlogging
+    url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
+    headers = {"Content-Type": "application/json"}
 
-# Post to Bluesky
-def post_to_bluesky(price, change):
-    # Determine emoji based on price movement
-    emoji = "📈" if change > 0 else "📉"
-    change_formatted = f"{change:.2f}%"
-    price_formatted = f"${price:,.0f}"
-
-    # Final message text
-    message = (
-        f"{emoji} Bitcoin Price: {price_formatted} ({change_formatted})\n\n"
-        "#bitcoin #btc #crypto"
-    )
-    
-    print("Final message being sent to Bluesky:")
-    print(message)
-
-    # Login details
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
-    
+
+    print(f"Using handle: {handle}")
+    print("Starting login...")
+
+    # Logg inn for å få token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
-        json={"identifier": handle, "password": password}
+        json={"identifier": handle, "password": password},
     )
+    print("Login response:", login_response.status_code, login_response.text)
 
-    if login_response.status_code != 200:
+    if login_response.status_code == 200:
+        access_token = login_response.json().get("accessJwt")
+        headers["Authorization"] = f"Bearer {access_token}"
+        print("Login successful. Access token acquired.")
+    else:
         print("Login failed:", login_response.text)
         return
 
-    access_token = login_response.json().get("accessJwt")
-    headers = {"Authorization": f"Bearer {access_token}"}
+    # Tekst og facets (hashtags) til posten
+    text = f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain"
+    facets = [
+        {"index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + 4}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "btc"}]},
+        {"index": {"byteStart": text.index("#crypto"), "byteEnd": text.index("#crypto") + 7}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "crypto"}]},
+        {"index": {"byteStart": text.index("#blockchain"), "byteEnd": text.index("#blockchain") + 11}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "blockchain"}]},
+    ]
 
-    # Post message to Bluesky
-    post_data = {
+    # Innhold til posten med facets
+    content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": message,
-            "createdAt": datetime.now(timezone.utc).isoformat()
-        }
+            "text": text,
+            "facets": facets,
+            "createdAt": datetime.now().isoformat(timespec="seconds") + "Z",
+        },
     }
 
-    response = requests.post(
-        "https://bsky.social/xrpc/com.atproto.repo.createRecord",
-        headers=headers,
-        json=post_data
-    )
+    print("Attempting to send post...")
+    response = requests.post(url, headers=headers, json=content)
+    print("Post response:", response.status_code, response.text)
 
     if response.status_code == 200:
         print("Successfully posted to Bluesky!")
     else:
         print("Error posting:", response.text)
 
-# Main function
+def main():
+    # Hent Bitcoin-prisen fra CoinGecko
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        price = response.json()["bitcoin"]["usd"]
+        print(f"Current Bitcoin Price: ${price:,}")
+        post_to_bluesky_direct(price)
+    else:
+        print("Error fetching Bitcoin price:", response.text)
+
 if __name__ == "__main__":
-    print("Fetching Bitcoin price...")
-    price, change = fetch_bitcoin_price()
-    print("Starting login...")
-    post_to_bluesky(price, change)
+    main()
