@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 def fetch_bitcoin_price():
     url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true"
@@ -19,7 +19,7 @@ def generate_facets(text, tags):
     """Genererer facetter for hashtags som sikrer klikkbarhet."""
     facets = []
     for tag in tags:
-        start = text.find(tag)
+        start = text.index(tag)
         end = start + len(tag)
         facets.append({
             "index": {"byteStart": start, "byteEnd": end},
@@ -61,6 +61,7 @@ def post_to_bluesky():
     hashtags = ["#bitcoin", "#btc", "#crypto"]
     text = f"{emoji} Bitcoin Price: ${price:,} ({change}%)\n\n{' '.join(hashtags)}"
 
+    # Generate facets for hashtags
     facets = generate_facets(text, hashtags)
 
     # Create content for Bluesky
@@ -70,7 +71,7 @@ def post_to_bluesky():
         "record": {
             "text": text,
             "facets": facets,
-            "createdAt": datetime.utcnow().isoformat() + "Z",
+            "createdAt": datetime.now(timezone.utc).isoformat(),
         },
     }
 
