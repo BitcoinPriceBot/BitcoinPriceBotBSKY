@@ -19,12 +19,14 @@ def post_to_bluesky():
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
 
+    # Hent miljøvariabler
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
 
     print(f"Using handle: {handle}")
     print("Starting login...")
 
+    # Logg inn for å få en access token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
         json={"identifier": handle, "password": password},
@@ -38,19 +40,21 @@ def post_to_bluesky():
         print("Login failed:", login_response.text)
         return
 
+    # Hent Bitcoin-pris og endring
     price, change = fetch_bitcoin_price()
     if price is None or change is None:
         print("Failed to fetch Bitcoin data.")
         return
 
+    # Bestem emoji for oppgang eller nedgang
     emoji = "📈" if change > 0 else "📉"
 
-    text = f"{emoji} Bitcoin Price: ${price:,}\n📊 24h Change: {change}%\n\n#bitcoin #btc #crypto"
+    # Formater tekst
+    text = f"{emoji} Bitcoin Price: ${price:,} ({change}% 24hr)\n\n#bitcoin #btc #crypto"
 
-    # Dynamisk beregning av facetter
+    # Dynamisk plassering av facetter for hashtags
     facets = []
     hashtags = ["#bitcoin", "#btc", "#crypto"]
-
     for hashtag in hashtags:
         start = text.find(hashtag)
         end = start + len(hashtag)
@@ -59,6 +63,7 @@ def post_to_bluesky():
             "features": [{"$type": "app.bsky.richtext.facet#link", "uri": f"https://bsky.app/hashtag/{hashtag[1:]}"}]
         })
 
+    # Opprett posten med facetter
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
@@ -69,6 +74,7 @@ def post_to_bluesky():
         },
     }
 
+    # Send posten til Bluesky
     print("Sending post...")
     response = requests.post(url, headers=headers, json=content)
 
