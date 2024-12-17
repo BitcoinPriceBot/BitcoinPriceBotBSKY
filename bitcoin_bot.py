@@ -3,7 +3,7 @@ import os
 import json
 from datetime import datetime
 
-def post_to_bluesky_direct(price):
+def post_to_bluesky_direct(price, change):
     # Bluesky API-endepunkt og innlogging
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
@@ -30,11 +30,11 @@ def post_to_bluesky_direct(price):
         return
 
     # Tekst og facets (hashtags) til posten
-    text = f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain"
+    text = f"Bitcoin Price: ${price:,} ({change:.2f}%)\n\n#bitcoin #btc #crypto"
     facets = [
+        {"index": {"byteStart": text.index("#bitcoin"), "byteEnd": text.index("#bitcoin") + 8}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "bitcoin"}]},
         {"index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + 4}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "btc"}]},
         {"index": {"byteStart": text.index("#crypto"), "byteEnd": text.index("#crypto") + 7}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "crypto"}]},
-        {"index": {"byteStart": text.index("#blockchain"), "byteEnd": text.index("#blockchain") + 11}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "blockchain"}]},
     ]
 
     # Innhold til posten med facets
@@ -58,14 +58,16 @@ def post_to_bluesky_direct(price):
         print("Error posting:", response.text)
 
 def main():
-    # Hent Bitcoin-prisen fra CoinGecko
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    # Hent Bitcoin-prisen og prosentendring fra CoinGecko
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true"
     response = requests.get(url)
 
     if response.status_code == 200:
-        price = response.json()["bitcoin"]["usd"]
-        print(f"Current Bitcoin Price: ${price:,}")
-        post_to_bluesky_direct(price)
+        data = response.json()["bitcoin"]
+        price = data["usd"]
+        change = data["usd_24h_change"]
+        print(f"Current Bitcoin Price: ${price:,}, Change: {change:.2f}%")
+        post_to_bluesky_direct(price, change)
     else:
         print("Error fetching Bitcoin price:", response.text)
 
