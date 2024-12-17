@@ -53,7 +53,7 @@ def post_to_bluesky(price, change):
         print(f"Error posting: {response.text}")
 
 def main():
-    # Her kan du legge inn en dummypris og endring for testing
+    # Dummydata for testing
     bitcoin_price = 106956  # Eksempelpris
     change_percentage = 3.18  # Eksempelprosent
 
