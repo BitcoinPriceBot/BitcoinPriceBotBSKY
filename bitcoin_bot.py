@@ -4,18 +4,17 @@ import json
 from datetime import datetime, timezone
 
 def post_to_bluesky(price, change):
-    # Bluesky API-endepunkt og nødvendige data
+    # Bluesky API-endepunkt og innlogging
     url = "https://bsky.social/xrpc/com.atproto.repo.createRecord"
     headers = {"Content-Type": "application/json"}
-
-    # Henter miljøvariabler for innlogging
+    
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
     
     print(f"Using handle: {handle}")
     print("Starting login...")
 
-    # Trinn 1: Logg inn for å få en token
+    # Logg inn for å få en token
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
         json={"identifier": handle, "password": password},
@@ -29,26 +28,35 @@ def post_to_bluesky(price, change):
         print(f"Login failed: {login_response.text}")
         return
 
-    # Trinn 2: Innhold til posten
-    created_at = datetime.now(timezone.utc).isoformat()  # Riktig ISO 8601 format for tidsstempel
+    # Lag riktig tidsstempel
+    created_at = datetime.now(timezone.utc).isoformat()
+
+    # Postens tekst
+    text = (
+        f"📈 Bitcoin Price: ${price:,.0f}\n"
+        f"📊 24h Change: {change:.2f}%\n\n"
+        "#bitcoin #btc #crypto"
+    )
+
+    # Facets for hashtags – Dette gjør dem klikkbare!
+    facets = [
+        {"index": {"byteStart": 53, "byteEnd": 61}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "bitcoin"}]},
+        {"index": {"byteStart": 62, "byteEnd": 66}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "btc"}]},
+        {"index": {"byteStart": 67, "byteEnd": 74}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "crypto"}]},
+    ]
+
+    # Innhold til posten
     content = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
-            "text": (
-                f"📈 Bitcoin Price: ${price:,.0f}\n"
-                f"📊 24h Change: {change:.2f}%\n\n"
-                "#bitcoin #btc #crypto"
-            ),
+            "text": text,
+            "facets": facets,
             "createdAt": created_at,
         },
     }
 
-    # Debug: Skriv ut innholdet som sendes til Bluesky
-    print("DEBUG: Content being sent to Bluesky:")
-    print(json.dumps(content, indent=2))
-
-    # Trinn 3: Send posten til Bluesky
+    # Send posten til Bluesky
     response = requests.post(url, headers=headers, json=content)
 
     if response.status_code == 200:
@@ -57,11 +65,10 @@ def post_to_bluesky(price, change):
         print(f"Error posting: {response.text}")
 
 def main():
-    # Dummydata for testing
-    bitcoin_price = 106956  # Eksempelpris
-    change_percentage = 3.18  # Eksempelprosent
+    # Eksempeldata
+    bitcoin_price = 106956
+    change_percentage = 3.18
 
-    # Kall funksjonen for å poste til Bluesky
     post_to_bluesky(bitcoin_price, change_percentage)
 
 if __name__ == "__main__":
