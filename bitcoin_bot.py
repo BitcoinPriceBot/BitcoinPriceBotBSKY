@@ -16,10 +16,10 @@ def fetch_bitcoin_price():
         return None, None
 
 def generate_facets(text, tags):
-    """Genererer facetter for hashtags."""
+    """Genererer facetter for hashtags som sikrer klikkbarhet."""
     facets = []
     for tag in tags:
-        start = text.index(tag)
+        start = text.find(tag)
         end = start + len(tag)
         facets.append({
             "index": {"byteStart": start, "byteEnd": end},
