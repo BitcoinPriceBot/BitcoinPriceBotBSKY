@@ -14,7 +14,7 @@ def fetch_bitcoin_price():
 def post_to_bluesky(price, change):
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
-    
+
     print("Starting login...")
     login_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.server.createSession",
@@ -23,39 +23,37 @@ def post_to_bluesky(price, change):
     if login_response.status_code != 200:
         print("Login failed:", login_response.text)
         return
-    
+
     access_token = login_response.json().get("accessJwt")
     headers = {"Authorization": f"Bearer {access_token}"}
     print("Login successful.")
-    
-    # Determine emoji based on price change
+
+    # Emoji for price movement
     emoji = "📉" if change < 0 else "📈"
-    
-    # Format price and change
     formatted_price = f"${price:,.0f}"
     formatted_change = f"{change:.2f}%"
-    
-    # Prepare content
+
+    # Post content: ALL TEXT IN A SINGLE STRING
     content = (
-        f"{emoji} Bitcoin Price: {formatted_price} ({formatted_change})\n\n"
-        "#bitcoin #btc #crypto"
+        f"{emoji} Bitcoin Price: {formatted_price} ({formatted_change})\n"
+        f"#bitcoin #btc #crypto"
     )
-    
+
     print("Sending post...")
     post_data = {
         "repo": handle,
         "collection": "app.bsky.feed.post",
         "record": {
             "text": content,
-            "createdAt": datetime.utcnow().isoformat() + "Z"
+            "createdAt": datetime.now().isoformat() + "Z"
         }
     }
-    
+
     post_response = requests.post(
         "https://bsky.social/xrpc/com.atproto.repo.createRecord",
         headers=headers, json=post_data
     )
-    
+
     if post_response.status_code == 200:
         print("Successfully posted to Bluesky!")
     else:
