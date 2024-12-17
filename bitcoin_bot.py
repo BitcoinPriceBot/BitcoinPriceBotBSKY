@@ -1,7 +1,9 @@
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+import time
 
+# Function to fetch Bitcoin price and change
 def get_bitcoin_data():
     url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true"
     response = requests.get(url)
@@ -14,6 +16,7 @@ def get_bitcoin_data():
         print("Error fetching Bitcoin data")
         return None, None
 
+# Function to post to Bluesky
 def post_to_bluesky(price, change):
     handle = os.getenv("BLUESKY_HANDLE")
     password = os.getenv("BLUESKY_PASSWORD")
@@ -56,7 +59,21 @@ def post_to_bluesky(price, change):
     else:
         print("Login failed:", login_response.text)
 
+# Main loop
 if __name__ == "__main__":
+    # Manual trigger post
+    print("Running manual trigger post...")
     bitcoin_price, price_change = get_bitcoin_data()
     if bitcoin_price is not None and price_change is not None:
         post_to_bluesky(bitcoin_price, price_change)
+    
+    # Loop for scheduled posts every 30 minutes
+    print("Starting scheduled posting every 30 minutes...")
+    while True:
+        next_run = datetime.now() + timedelta(minutes=30)
+        print(f"Next post scheduled for {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+        time.sleep(1800)  # Wait 30 minutes
+        
+        bitcoin_price, price_change = get_bitcoin_data()
+        if bitcoin_price is not None and price_change is not None:
+            post_to_bluesky(bitcoin_price, price_change)
