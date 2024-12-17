@@ -18,12 +18,10 @@ def get_bitcoin_price():
         return None
 
 def post_to_bluesky(client, price):
-    # Formatér meldingen uten noen unødvendige tegn eller linjeskift
-    message = f"Bitcoin price: ${price:,} #btc #crypto #blockchain".strip()
+    # Bruk dobbelt linjeskift og sørg for korrekt format
+    message = f"Bitcoin price: ${price:,}\n\n#btc #crypto #blockchain"
     client.send_post(text=message)
     print(f"Posted: {message} at {datetime.now()}")
-
-
 
 def main():
     client = Client()
