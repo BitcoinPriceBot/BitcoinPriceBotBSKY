@@ -29,8 +29,9 @@ def post_to_bluesky_direct(price, change):
         print("Login failed:", login_response.text)
         return
 
-    # Tekst og facets (hashtags) til posten
-    text = f"Bitcoin Price: ${price:,} ({change:.2f}%)\n\n#bitcoin #btc #crypto"
+    # Bestem om endringen er positiv eller negativ
+    sign = "+" if change >= 0 else ""
+    text = f"Bitcoin Price: ${price:,} ({sign}{change:.2f}%)\n\n#bitcoin #btc #crypto"
     facets = [
         {"index": {"byteStart": text.index("#bitcoin"), "byteEnd": text.index("#bitcoin") + 8}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "bitcoin"}]},
         {"index": {"byteStart": text.index("#btc"), "byteEnd": text.index("#btc") + 4}, "features": [{"$type": "app.bsky.richtext.facet#tag", "tag": "btc"}]},
